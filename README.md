@@ -1,16 +1,16 @@
 # Py-AXIRV
 
-Py-AXIRV è un pacchetto Python installabile tramite pip che permette di scaricare e caricare articoli da arXiv direttamente su uno storage S3.
+Py-AXIRV is a Python package installable via pip that allows you to download and upload articles from arXiv directly to S3 storage.
 
-## Installazione
+## Installation
 
 ```bash
 pip install py-axirv
 ```
 
-## Utilizzo
+## Usage
 
-Esempio di utilizzo per caricare articoli arXiv su S3:
+Example usage to upload arXiv articles to S3:
 
 ```python
 import urllib.request as libreq
@@ -34,9 +34,9 @@ axirv = ArxivLoader(
 axirv.load()
 ```
 
-Assicurati di impostare le variabili d'ambiente AWS (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_BUCKET_NAME`) prima di eseguire lo script.
+Make sure to set the AWS environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_BUCKET_NAME`) before running the script.
 
-Esempio di utlizzo per caricare articoli arXiv su un percorso locale:
+Example usage to upload arXiv articles to a local path:
 
 ```python
 import urllib.request as libreq
@@ -53,12 +53,12 @@ axirv = ArxivLoader(
     path_download='tmp'
 )
 
-# oppure configurare una cartella diversa di download
+# or configure a different download folder
 axirv.set_path_download('/downloads/axirv')
 
 axirv.load()
 ```
 
-## Licenza
+## License
 
-Questo progetto è distribuito sotto licenza MIT.
+This project is distributed under the MIT license.
