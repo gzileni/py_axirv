@@ -66,7 +66,8 @@ class ArxivLoader:
             self.path_download = kwargs.get('path_download', self.path_download)
             if not self.path_download:
                 raise ValueError("For local storage, path_download must be provided.")
-            self.path = self.set_path_download(self.path_download)
+            app_root = os.path.dirname(os.path.abspath(__file__))
+            self.path = os.path.join(app_root, self.path_download)
         
         query = "all" 
         if self.query:
@@ -80,8 +81,7 @@ class ArxivLoader:
         Args:
         
         """
-        app_root = os.path.dirname(os.path.abspath(__file__))
-        return os.path.join(app_root, path)
+        self.path_download = path
 
     def load(self):
         """
@@ -101,40 +101,52 @@ class ArxivLoader:
                 arxiv_id = atom_it.text if atom_it is not None else ""
                 
             # PDF link
-            pdf_link = ""
-            for link in entry.findall('atom:link', self.ns):
-                if link.attrib.get('title') == "pdf":
-                    pdf_link = link.attrib.get('href')
+            if arxiv_id is None:
+                continue
+            else:
+                pdf_filename = arxiv_id.replace('.', '_').replace('/', '_').replace(':', '').replace('http', '') + ".pdf"
+                pdf_link : str | None = ""
+                for link in entry.findall('atom:link', self.ns):
+                    if link.attrib.get('title') == "pdf":
+                        pdf_link = link.attrib.get('href')
 
-            if arxiv_id is not None:
                 # Scarica PDF (se disponibile)
                 pdf_path : str = ""
-                if pdf_link:
-                    pdf_filename = arxiv_id.replace('.', '_').replace('/', '_').replace(':', '').replace('http', '') + ".pdf"
-                    if self.type_storage == 'local':
+                
+                if pdf_link is None:
+                    print(f"No PDF link found for {arxiv_id}.")
+                    continue
+                
+                if self.type_storage == 'local':
+                    if self.path is None:
+                        raise ValueError("Path for local storage is not set.")
+                    pdf_path = os.path.join(self.path, pdf_filename)
+                    if not os.path.exists(self.path):
+                        print(f"Creating directory {self.path} for PDF storage.")
+                        os.makedirs(self.path)
                         
-                        if self.path is None:
-                            raise ValueError("Path for local storage is not set.")
-                        
-                        pdf_path = os.path.join(self.path, pdf_filename)
-                        
-                        if not os.path.exists(self.path):
-                            os.makedirs(self.path)
-                        try:
-                            with libreq.urlopen(pdf_link) as pdf_url, open(pdf_path, 'wb') as f:
-                                buffer = pdf_url.read()
-                                if self.type_storage == 'local':
-                                    f.write(buffer)
-                                elif self.type_storage == 's3':
-                                    # Placeholder for S3 storage logic
-                                    # Assuming boto3 or similar library is used for S3 operations
-                                    # This part should be implemented based on the specific S3 client being used
-                                    pass
-                        except Exception as e:
-                            print(f"Errore nel download PDF {pdf_link}: {e}")
-                            pdf_path = ""
-                else:   
-                    raise ValueError(f"PDF link not found for arXiv ID: {arxiv_id}")
+                    try:
+                        with libreq.urlopen(pdf_link) as pdf_url, open(pdf_path, 'wb') as f:
+                            f.write(pdf_url.read())   
+                        print(f"PDF {pdf_filename} downloaded to {self.path}.")
+                    except Exception as e:
+                        print(f"Errore nel download PDF {pdf_link}: {e}")
+                        continue
+                elif self.type_storage == 's3':
+                    try:
+                        with libreq.urlopen(pdf_link) as pdf_url:                        
+                            buffer = pdf_url.read()
+                            if self.type_storage == 'local':
+                                pdf_url.write(buffer)
+                            elif self.type_storage == 's3':
+                                # Placeholder for S3 storage logic
+                                # Assuming boto3 or similar library is used for S3 operations
+                                # This part should be implemented based on the specific S3 client being used
+                                object_name = f"{self.prefix}/{pdf_filename}"
+                                self.s3.upload_bytes(bytes_data=buffer, object_name=object_name, format_file='pdf')
+                                print(f"PDF {pdf_filename} uploaded to S3 bucket {self.bucket_name} with prefix {self.prefix}.")
+                    except Exception as e:
+                        print(f"Errore nel download PDF {pdf_link}: {e}")
 
     def _load_from_arxiv_api(self):
         """
