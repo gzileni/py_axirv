@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "py-arxiv"
 version = "1.0.1"
-description = "A Pyhon library for memory management for the agent ai"
+description = "A Python package for interacting with the arXiv API, providing tools for searching, retrieving, and processing arXiv articles."
 authors = [
     { name="Giuseppe Zileni", email="giuseppe.zileni@gmail.com" }
 ]
